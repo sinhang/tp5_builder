@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>工具箱</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="/css/tool/app.css">
+</head>
+<body>
+<div id="app">
+    <div class="container">
+        <el-table border :data="tables">
+            <el-table-column
+                    prop="TABLE_COMMENT"
+                    label="数据表"
+                    width="180">
+            </el-table-column>
+            <el-table-column
+                    prop="TABLE_NAME"
+                    label="表名"
+                    width="180">
+            </el-table-column>
+            <el-table-column
+                    prop="CREATE_TIME"
+                    label="创建时间"
+                    width="180">
+            </el-table-column>
+            <el-table-column
+                    prop="ENGINE"
+                    label="引擎">
+            </el-table-column>
+            <el-table-column
+                    prop="TABLE_ROWS"
+                    label="行数">
+            </el-table-column>
+            <el-table-column
+                    prop="DATA_LENGTH"
+                    label="数据长度">
+            </el-table-column>
+            <el-table-column
+                    prop="TABLE_COLLATION"
+                    label="集合">
+            </el-table-column>
+            <el-table-column
+                    label="操作">
+                <template slot-scope="scope">
+                    <p class="text-center">
+                        <el-button
+                            size="mini"
+                            type="primary"
+                            @click="generateDataModel(scope.$index, scope.row.TABLE_NAME, scope.row)">生成数据模型</el-button>
+                    </p>
+                    <p class="text-center mt-2">
+                        <el-button
+                            size="mini"
+                            type="success"
+                            @click="generateValidateModel(scope.$index, scope.row.TABLE_NAME, scope.row)">生成验证模型</el-button>
+                    </p>
+                </template>
+            </el-table-column>
+        </el-table>
+    </div>
+
+    <!-- Model -->
+    <el-dialog width="85%" title="生成数据模型" :close-on-click-modal="false" :close-on-press-escape="false" :before-close="clearAllData" :visible.sync="showGenerateDataModel">
+        <el-form size="small" label-position="top">
+            <el-tabs v-model="dataModelActive" @tab-click="dataModelHandleClick">
+                <el-tab-pane label="常规配置" name="basic">
+                    <el-form-item label="命名空间">
+                        <el-input v-model="namespace" />
+                    </el-form-item>
+                    <el-form-item label="文件路径">
+                        <el-input v-model="filepath" />
+                    </el-form-item>
+                    <el-form-item label="主键">
+                        <el-select filterable allow-create v-model="pk" placeholder="请选择">
+                            <el-option
+                                    v-for="item in data.fields"
+                                    :key="item.Field"
+                                    :label="item.Field"
+                                    :value="item.Field">
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="创建时间">
+                        <el-select filterable allow-create v-model="create_time" placeholder="请选择">
+                            <el-option
+                                    v-for="item in data.fields"
+                                    :key="item.Field"
+                                    :label="item.Field"
+                                    :value="item.Field">
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="更新时间">
+                        <el-select filterable allow-create v-model="update_time" placeholder="请选择">
+                            <el-option
+                                    v-for="item in data.fields"
+                                    :key="item.Field"
+                                    :label="item.Field"
+                                    :value="item.Field">
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="软删除">
+                        <el-select filterable allow-create v-model="delete_time" placeholder="请选择">
+                            <el-option
+                                    v-for="item in data.fields"
+                                    :key="item.Field"
+                                    :label="item.Field"
+                                    :value="item.Field">
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+                </el-tab-pane>
+                <el-tab-pane label="模型属性" name="attr">
+                    <el-table border size="mini" :data="attrList">
+                        <el-table-column label="字段名" width="200">
+                            <template slot-scope="scope">
+                                {{ scope.row.title }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="选择字段">
+                            <template slot-scope="scope">
+                                <el-checkbox-group v-model="scope.row.value">
+                                    <el-checkbox :label="item.Comment ? item.Comment : item.Field" v-for="(item, index) in data.fields" :key="index"></el-checkbox>
+                                </el-checkbox-group>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </el-tab-pane>
+                <el-tab-pane label="追加数据" name="append">
+                    <el-table border size="mini" :data="appendList">
+                        <el-table-column label="字段名" width="200">
+                            <template slot-scope="scope">
+                                <el-select filterable allow-create v-model="scope.row.name" placeholder="请选择">
+                                    <el-option
+                                            v-for="item in data.fields"
+                                            :key="item.Field"
+                                            :label="item.Field"
+                                            :value="item.Field">
+                                    </el-option>
+                                </el-select>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="方法体">
+                            <template slot-scope="scope">
+                                <p>
+                                    <span>protected function get</span><span>{{ scope.row.name|parseFunctionName }}</span><span>TextAttr($value, $data) {'</span>
+                                </p>
+                                <el-form-item style="margin-bottom: 0" label="">
+                                    <el-input style="padding-left: 30px" type="textarea" v-model="scope.row.body" />
+                                </el-form-item>
+                                <p>}</p>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="操作" width="100" align="center">
+                            <template slot="header" slot-scope="scope">
+                                <el-button
+                                        size="mini"
+                                        type="success"
+                                        @click="appendAddBtn(scope.$index, scope.row)">新增</el-button>
+                            </template>
+                            <template slot-scope="scope">
+                                <el-button
+                                        size="mini"
+                                        type="danger"
+                                        @click="appendDelBtn(scope.$index, scope.row)">移除</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </el-tab-pane>
+                <el-tab-pane label="设置数据" name="set">
+                    <el-table border size="mini" :data="setFunctionList">
+                        <el-table-column label="字段名" width="200">
+                            <template slot-scope="scope">
+                                <el-select filterable allow-create allow-create v-model="scope.row.name" placeholder="请选择">
+                                    <el-option
+                                            v-for="item in data.fields"
+                                            :key="item.Field"
+                                            :label="item.Field"
+                                            :value="item.Field">
+                                    </el-option>
+                                </el-select>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="方法体">
+                            <template slot-scope="scope">
+                                <p>
+                                    <span>protected function set</span><span>{{ scope.row.name|parseFunctionName }}</span><span>TextAttr($value, $data) {'</span>
+                                </p>
+                                <el-form-item style="margin-bottom: 0">
+                                    <el-input style="padding-left: 30px" type="textarea" v-model="scope.row.body" />
+                                </el-form-item>
+                                <p>}</p>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="操作" width="100" align="center">
+                            <template slot="header" slot-scope="scope">
+                                <el-button
+                                        size="mini"
+                                        type="success"
+                                        @click="setDataAddBtn(scope.$index, scope.row)">新增</el-button>
+                            </template>
+                            <template slot-scope="scope">
+                                <el-button
+                                        size="mini"
+                                        type="danger"
+                                        @click="setDataDelBtn(scope.$index, scope.row)">移除</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </el-tab-pane>
+                <el-tab-pane label="获取数据" name="get">
+                    <el-table border size="mini" :data="getFunctionList">
+                        <el-table-column label="字段名" width="200">
+                            <template slot-scope="scope">
+                                <el-select filterable allow-create v-model="scope.row.name" placeholder="请选择">
+                                    <el-option
+                                            v-for="item in data.fields"
+                                            :key="item.Field"
+                                            :label="item.Field"
+                                            :value="item.Field">
+                                    </el-option>
+                                </el-select>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="方法体">
+                            <template slot-scope="scope">
+                                <p>
+                                    <span>protected function get</span><span>{{ scope.row.name|parseFunctionName }}</span><span>TextAttr($value, $data) {'</span>
+                                </p>
+                                <el-form-item style="margin-bottom: 0">
+                                    <el-input style="padding-left: 30px" type="textarea" v-model="scope.row.body" />
+                                </el-form-item>
+                                <p>}</p>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="操作" width="100" align="center">
+                            <template slot="header" slot-scope="scope">
+                                <el-button
+                                        size="mini"
+                                        type="success"
+                                        @click="getDataAddBtn(scope.$index, scope.row)">新增</el-button>
+                            </template>
+                            <template slot-scope="scope">
+                                <el-button
+                                        size="mini"
+                                        type="danger"
+                                        @click="getDataDelBtn(scope.$index, scope.row)">移除</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </el-tab-pane>
+                <el-tab-pane label="关联数据" name="relation">
+                    <el-table size="mini" border :data="relationList">
+                        <el-table-column label="关联属性" width="250">
+                            <template slot-scope="scope">
+                                <el-form-item label="关联表">
+                                    <el-select @change="selectedRelationTable(scope.$index)" filterable v-model="scope.row.table" placeholder="请选择">
+                                        <el-option
+                                            v-for="item in tables"
+                                            :key="item.TABLE_NAME"
+                                            :label="item.TABLE_NAME"
+                                            :value="item.TABLE_NAME"
+                                            :disabled="item.TABLE_NAME === currentTable">
+                                        </el-option>
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item label="关联类型">
+                                    <el-select filterable v-model="scope.row.relation" placeholder="请选择">
+                                        <el-option
+                                                v-for="item in relations"
+                                                :key="item.value"
+                                                :label="item.value"
+                                                :value="item.value">
+                                        </el-option>
+                                    </el-select>
+                                </el-form-item>
+                            </template>
+                        </el-table-column>
+                        <el-table-column width="200" label="关联键">
+                            <template slot-scope="scope">
+                                <el-form-item label="外键foreignKey">
+                                    <el-select filterable v-model="scope.row.foreignKey" placeholder="请选择">
+                                        <el-option
+                                                v-for="item in data.fields"
+                                                :key="item.Field"
+                                                :label="item.Field"
+                                                :value="item.Field">
+                                        </el-option>
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item label="主键localKey">
+                                    <el-select filterable v-model="scope.row.localKey" placeholder="请选择">
+                                        <el-option
+                                                v-for="item in scope.row.fields"
+                                                :key="item.Field"
+                                                :label="item.Field"
+                                                :value="item.Field">
+                                        </el-option>
+                                    </el-select>
+                                </el-form-item>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="查询字段">
+                            <template slot-scope="scope">
+                                <el-checkbox-group v-model="scope.row.selectComments">
+                                    <el-checkbox :label="item.Comment ? item.Comment : item.Field" v-for="(item, index) in scope.row.fields" :key="index"></el-checkbox>
+                                </el-checkbox-group>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="操作" width="100" align="center">
+                            <template slot="header" slot-scope="scope">
+                                <el-button
+                                        size="mini"
+                                        type="success"
+                                        @click="relationAddBtn(scope.$index, scope.row)">新增</el-button>
+                            </template>
+                            <template slot-scope="scope">
+                                <el-button
+                                        size="mini"
+                                        type="danger"
+                                        @click="relationDelBtn(scope.$index, scope.row)">移除</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </el-tab-pane>
+            </el-tabs>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="showGenerateDataModel = false">取 消</el-button>
+            <el-button type="primary" :loading="btnLoading" @click="btnGenerateModel">确 定</el-button>
+        </span>
+    </el-dialog>
+
+    <!-- Validate -->
+    <el-dialog :close-on-click-modal="false" :close-on-press-escape="false" width="85%" title="生成验证模型" :visible.sync="showGenerateValidateModel">
+        <el-form size="small">
+            <el-tabs v-model="validateModelActive" @tab-click="dataModelHandleClick">
+                <el-tab-pane label="常规配置" name="basic">
+                    <el-form-item label="命名空间">
+                        <el-input v-model="namespace" />
+                    </el-form-item>
+                    <el-form-item label="文件路径">
+                        <el-input v-model="filepath" />
+                    </el-form-item>
+                </el-tab-pane>
+                <el-tab-pane label="校验字段" name="field">
+                    <el-checkbox-group v-model="validateFields" @change="chooseValidateField">
+                        <el-checkbox :label="item.Comment ? item.Comment : item.Field" v-for="(item, index) in data.fields" :key="index"></el-checkbox>
+                    </el-checkbox-group>
+                    <el-table border class="mt-3" :data="selectedValidateFields">
+                        <el-table-column label="字段名称" align="center" width="150">
+                            <template slot-scope="scope">
+                                {{ scope.row.Comment }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="校验类型">
+                            <template slot-scope="scope">
+                                <span v-for="(tag, i) in scope.row.rules" v-show="tag.value !== '' && tag.value !== undefined" class="mb-2 mr-2 d-inline-block">
+                                    <el-tag
+                                            :key="tag.title"
+                                            :disable-transitions="true"
+                                            @close="closeTag(scope.$index, i)"
+                                            closable>
+                                        {{ tag.title }}:{{ tag.value }}
+                                    </el-tag>
+                                </span><el-button class="button-new-tag" size="small" @click="validateChooseRule(scope.row, scope.$index)">+ 规则</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </el-tab-pane>
+                <el-tab-pane label="校验场景" name="scene">
+                    <el-table border :data="validateScene">
+                        <el-table-column label="场景名称" align="center" width="150">
+                            <template slot-scope="scope">
+                                <el-form-item label="">
+                                    <el-input v-model="scope.row.scene" />
+                                </el-form-item>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="校验字段">
+                            <template slot-scope="scope">
+                                <el-checkbox-group v-model="scope.row.validate">
+                                    <el-checkbox :label="item.Comment ? item.Comment : item.Field" v-for="(item, index) in scope.row.fields" :key="index"></el-checkbox>
+                                </el-checkbox-group>
+                            </template>
+                        </el-table-column>
+                        <el-table-column
+                                width="100"
+                                align="center">
+                            <template slot="header" slot-scope="scope">
+                                <el-button
+                                    size="mini"
+                                    type="success"
+                                    @click="sceneAddBtn(scope.$index, scope.row)">新增</el-button>
+                            </template>
+                            <template slot-scope="scope">
+                                <el-button
+                                    size="mini"
+                                    type="danger"
+                                    @click="sceneDelBtn(scope.$index, scope.row)">移除</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </el-tab-pane>
+            </el-tabs>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="showGenerateValidateModel = false">取 消</el-button>
+            <el-button type="primary" :loading="btnLoading" @click="btnGenerateValidateModel">确 定</el-button>
+        </span>
+    </el-dialog>
+
+    <!-- 选择验证规则 -->
+    <el-dialog width="65%" ref="validateRules" :destroy-on-close="true" :before-close="closeChooseValidateRulesDialog" :close-on-click-modal="false" :close-on-press-escape="false" title="设置规则" :visible.sync="showGenerateValidateRules">
+        <el-form size="mini">
+            <el-table border :data="currentField.rules" height="500">
+                <el-table-column
+                        prop="title"
+                        width="150"
+                        label="验证规则"
+                        align="center"></el-table-column>
+                <el-table-column
+                        label="验证选项"
+                        align="center">
+                    <template slot-scope="scope">
+                        <el-form-item label="" v-if="scope.row.type == 'input'">
+                            <el-input v-model="scope.row.value" />
+                        </el-form-item>
+                        <p v-else="scope.row.type == 'checkbox'" class="text-left">
+<!--                            <label><input type="checkbox" v-model="scope.row.value">{{ scope.row.title }}</label>-->
+                            <el-checkbox v-if="scope.row.value" :label="scope.row.title" v-model="scope.row.value"></el-checkbox>
+                            <el-checkbox v-else :label="scope.row.title" v-model="scope.row.value"></el-checkbox>
+                        </p>
+
+                        <p class="text-left fs-12 text-99">
+                            {{ scope.row.tips }}
+                        </p>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="closeChooseValidateRulesDialog">取 消</el-button>
+            <el-button type="primary" @click="closeChooseValidateRulesDialog">确 定</el-button>
+        </span>
+    </el-dialog>
+</div>
+<!-- vue -->
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
+<!-- 引入组件库 -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<!-- axios -->
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script>
+    // let http = require('axios');
+    let tablesObj = {$tables|raw}, rulesObj = {$rules|raw}, relations = [
+        {
+            title: '一对一',
+            value: 'hasOne'
+        },
+        {
+            title: '一对多',
+            value: 'hasMany'
+        }
+    ], attrs = [
+        {
+            title: 'readonly',
+            value: [],
+            fields: []
+        },
+        {
+            title: 'auto',
+            value: [],
+            fields: []
+        },
+        {
+            title: 'insert',
+            value: [],
+            fields: []
+        },
+        {
+            title: 'update',
+            value: [],
+            fields: []
+        }
+    ];
+    let vm = new Vue({
+        el: '#app',
+        data: {
+            tables: tablesObj,
+            dataModelActive: 'basic',
+            validateModelActive: 'basic',
+            showGenerateDataModel: false,
+            showGenerateValidateModel: false,
+            pk: 'id',
+            create_time: 'create_time',
+            update_time: 'update_time',
+            delete_time: 'delete_time',
+            data: {},
+            checkGroup: [],
+            validateScene: [],
+            validateFields: [],
+            showGenerateValidateRules: false,
+            rules: rulesObj,
+            selectedValidateFields: [],
+            currentField: {},
+            currentFieldIndex: '',
+            btnLoading: false,
+            currentTable: '',
+            namespace: 'app\\api\\',
+            filepath: 'api/',
+            relationList: [],
+            relations: relations,
+            setFunctionList: [],
+            getFunctionList: [],
+            appendList: [],
+            attrList: attrs
+        },
+        methods: {
+            generateDataModel(index, table, item) {
+                this.showGenerateDataModel = true
+                this.namespace = ['app', 'api', 'model'].join('\\')
+                this.filepath = ['api', 'model'].join('/')
+                this.data = item
+                this.currentTable = table
+            },
+            generateValidateModel(index, table, item) {
+                this.showGenerateValidateModel = true
+                this.namespace = ['app', 'api', 'validate'].join('\\')
+                this.filepath = ['api', 'validate'].join('/')
+                this.data = item
+                this.currentTable = table
+            },
+            dataModelHandleClick() {
+
+            },
+            sceneAddBtn() {
+                this.validateScene.push({
+                    scene: this.validateScene.length,
+                    validate: [],
+                    fields: this.selectedValidateFields
+                })
+                console.log(this.selectedValidateFields)
+            },
+            sceneDelBtn(index, row) {
+                this.validateScene.splice(index, 1)
+            },
+            chooseValidateField(item, index) {
+                //  取出最后一个
+                let fields  = this.data.fields
+
+            },
+            validateChooseRule(item, index) {
+                this.currentField = item
+                this.currentFieldIndex = index
+                this.closeChooseValidateRulesDialog()
+                this.showGenerateValidateRules = true
+            },
+            selectedValidateRules() {
+                this.showGenerateValidateRules = false
+            },
+            selectedValidateField(item, index, xxx) {
+                console.log(item, index)
+            },
+            btnGenerateValidateModel() {
+                this.btnLoading = true
+
+                let validateFields  = [], scene = [];
+
+                for (let i in this.selectedValidateFields) {
+                    let tmp = {
+                        field: this.selectedValidateFields[i].Field,
+                        rules: ''
+                    }
+                    let rules = this.selectedValidateFields[i].rules
+                    for (let j in rules) {
+                        if (rules[j].value !== '' && rules[j].value !== undefined) {
+                            tmp.rules += (rules[j].value === true ? rules[j].rule : rules[j].rule + ':' + rules[j].value) + '|'
+                        }
+                    }
+
+                    if (tmp.rules !== '') {
+                        tmp.rules = tmp.rules.replace(/^(\s|\|)+|(\s|\|)+$/g, '')
+                        validateFields.push(tmp)
+                    }
+                }
+
+                for (let i in this.validateScene) {
+                    let validate = this.validateScene[i].validate
+                    let fields  = this.validateScene[i].fields
+                    let tmp = {
+                        scene: this.validateScene[i].scene,
+                        fields: []
+                    };
+                    for (let j in validate) {
+                        for (let f in fields) {
+                            if (validate[j] === fields[f].Comment) {
+                                tmp.fields.push(fields[f].Field)
+                            }
+                        }
+                    }
+                    if (tmp.fields.length > 0) {
+                        scene.push(tmp)
+                    }
+                }
+
+                axios.post('/index/validate', {
+                    table: this.currentTable,
+                    namespace: this.namespace,
+                    filepath: this.filepath,
+                    validateFields: validateFields,
+                    scene: scene
+                }).then(res => {
+
+                    this.$message({
+                        message: res.data.msg,
+                        type: res.data.code !== 0 ? 'success' : 'error'
+                    });
+
+                    if (res.data.code!== 0) {
+                        window.location.reload()
+                    } else {
+                        this.btnLoading = false
+                    }
+                }).catch(err => {
+                    this.btnLoading = false
+                })
+            },
+            clearAllData() {
+                this.showGenerateDataModel = false
+                console.log('clear all data')
+            },
+            closeChooseValidateRulesDialog() {
+                // this.$forceUpdate()
+                this.showGenerateValidateRules = false
+                console.log('close before')
+            },
+            closeTag(index, i) {
+                console.log(index, i)
+                this.selectedValidateFields[index].rules[i].value = ''
+            },
+            relationAddBtn() {
+                this.relationList.push({
+                    table: '',
+                    relation: '',
+                    foreignKey: '',
+                    localKey: '',
+                    fields: '',
+                    selectFields: [],
+                    selectComments: []
+                });
+            },
+            relationDelBtn(index, row) {
+                this.relationList.splice(index, 1)
+            },
+            selectedRelationTable(index) {
+                for (let i in this.tables) {
+                    if (this.tables[i].TABLE_NAME === this.relationList[index].table) {
+                        this.relationList[index].fields = this.tables[i].fields
+                        break
+                    }
+                }
+            },
+            getDataAddBtn() {
+                this.getFunctionList.push({
+                    name: '',
+                    body: 'return $value;'
+                })
+            },
+            getDataDelBtn(index, row) {
+                this.getFunctionList.splice(index, 1)
+            },
+            setDataAddBtn() {
+                this.setFunctionList.push({
+                    name: '',
+                    body: 'return $value;'
+                })
+            },
+            setDataDelBtn(index, row) {
+                this.setFunctionList.splice(index, 1)
+            },
+            appendAddBtn() {
+                this.appendList.push({
+                    name: '',
+                    body: 'return $value;'
+                })
+            },
+            appendDelBtn(index, row) {
+                this.appendList.splice(index, 1)
+            },
+            btnGenerateModel() {
+
+                this.btnLoading = true
+
+                let fields = this.data.fields
+                if (this.attrList.length > 0) {
+                    for (let i in this.attrList) {
+                        for (let v in this.attrList[i].value) {
+                            for (let field in fields) {
+                                if (fields[field].Comment === this.attrList[i].value[v]) {
+                                    this.attrList[i].fields.push(fields[field].Field)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (this.relationList.length > 0) {
+                    for (let i in this.relationList) {
+                        for (let c in this.relationList[i].selectComments) {
+                            for (let field in this.relationList[i].fields) {
+                                if (this.relationList[i].fields[field].Comment === this.relationList[i].selectComments[c]) {
+                                    this.relationList[i].selectFields.push(this.relationList[i].fields[field].Field)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                axios.post('/index/model', {
+                    table: this.currentTable,
+                    namespace: this.namespace,
+                    filepath: this.filepath,
+                    delete_time: this.delete_time,
+                    pk: this.pk,
+                    create_time: this.create_time,
+                    update_time: this.update_time,
+                    append: this.appendList,
+                    set: this.setFunctionList,
+                    get: this.getFunctionList,
+                    relation: this.relationList,
+                    attrs: this.attrList
+                }).then(res => {
+                    this.$message({
+                        message: res.data.msg,
+                        type: res.data.code !== 0 ? 'success' : 'error'
+                    });
+
+                    if (res.data.code!== 0) {
+                        // window.location.reload()
+                    } else {
+                        this.btnLoading = false
+                    }
+                    this.btnLoading = false
+                }).catch(err => {
+                    this.btnLoading = false
+                })
+            }
+        },
+        watch: {
+            validateFields: function (nVal, oVal) {
+                let fields = this.data.fields
+                this.selectedValidateFields = []
+                if (nVal.length > 0) {
+                    for (let i in nVal) {
+                        for (let field in fields) {
+                            if (fields[field].Comment === nVal[i]) {
+                                this.selectedValidateFields.push(fields[field])
+                            }
+                        }
+                    }
+                }
+            },
+            validateScene: function (nVal, oVal) {
+                console.log(nVal)
+            },
+            attrList: function (nVal, oVal) {
+                let fields = this.data.fields
+                if (nVal.length > 0) {
+                    for (let i in nVal) {
+                        for (let v in nVal[i].value) {
+                            for (let field in fields) {
+                                if (fields[field].Comment === nVal[i].value[v]) {
+                                    nVal[i].fields.push(fields[field].Field)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        filters: {
+            parseFunctionName: function(val) {
+                if (val) {
+                    let valArr = val.split('_'), valName = ''
+                    for (let i in valArr) {
+                        valName += valArr[i].charAt(0).toLocaleUpperCase() + valArr[i].slice(1)
+                    }
+                    return valName
+                }
+            }
+        }
+    })
+</script>
+</body>
+</html>

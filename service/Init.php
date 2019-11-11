@@ -153,11 +153,17 @@ abstract class Init
      */
     protected function arrToStrArr($arr, $last = ',', $start = '[', $end = ']')
     {
-        $str    = "{$start}'";
-        if (!empty($arr)) {
-            $str .= implode("', '", $arr);
+
+        if (empty($str)) {
+            $str    = "{$start}{$end}";
+        } else {
+            $str    = "{$start}'";
+            if (!empty($arr)) {
+                $str .= implode("', '", $arr);
+            }
+            $str .= "'{$end}{$last}";
         }
-        $str .= "'{$end}{$last}";
+
         return $str;
     }
 

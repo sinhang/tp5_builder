@@ -668,12 +668,12 @@
                         message: res.data.msg,
                         type: res.data.code !== 0 ? 'success' : 'error'
                     });
-
-                    if (res.data.code!== 0) {
-                        window.location.reload()
-                    } else {
-                        this.btnLoading = false
-                    }
+                    this.btnLoading = false
+                    // if (res.data.code!== 0) {
+                    //     window.location.reload()
+                    // } else {
+                    //     this.btnLoading = false
+                    // }
                 }).catch(err => {
                     this.btnLoading = false
                 })
@@ -783,12 +783,12 @@
                         message: res.data.msg,
                         type: res.data.code !== 0 ? 'success' : 'error'
                     });
-
-                    if (res.data.code!== 0) {
-                        window.location.reload()
-                    } else {
-                        this.btnLoading = false
-                    }
+                    this.btnLoading = false
+                    // if (res.data.code!== 0) {
+                    //     window.location.reload()
+                    // } else {
+                    //     this.btnLoading = false
+                    // }
                 }).catch(err => {
                     this.btnLoading = false
                 })

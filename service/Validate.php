@@ -42,7 +42,7 @@ class Validate extends Init
 
         if (!empty($this->data['validateFields'])) {
             foreach ($this->data['validateFields'] as $v) {
-                $code   .= $this->generateCodeRow(sprintf("'%s'\t=>\t'{%s_%s}',", $v['field'], $this->getNoPrefixTableName(), $v['field']), true);
+                $code   .= $this->generateCodeRow(sprintf("'%s'\t=>\t'{%s_%s}',", $v['field'], $this->getNoPrefixTableName($this->data['table']), $v['field']), true);
             }
         }
 

@@ -37,8 +37,8 @@ class Model extends Init
     protected $deleteTime = \'%s\';
     protected $resultSetType = \'collection\';
     protected $autoWriteTimestamp = false;
-    protected $createTime = \' %s\';
-    protected $updateTime = \' %s\';
+    protected $createTime = \'%s\';
+    protected $updateTime = \'%s\';
     protected $dateFormat = \'Y-m-d H:i:s\';
     protected $append = %s;
     protected $readonly  = %s;
@@ -132,7 +132,7 @@ class Model extends Init
                     sprintf('return $this->%s(%s, \'%s\', \'%s\')%s%s->field(\'%s\');',
                         $v['relation'],
                         "{$this->data['namespace']}\\{$name}{$this->suffix}::class",
-                        $v['foreignKey'], $v['localKey'],
+                        $v['localKey'], $v['foreignKey'],
                         self::CODE_ROW_RIGHT,
                         str_repeat(self::CODE_ROW_LEFT, 3),
                         !empty($v['selectFields']) ? implode(',', $v['selectFields']) : '*'),

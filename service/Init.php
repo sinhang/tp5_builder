@@ -60,10 +60,17 @@ abstract class Init
 
     /**
      * 获取文件名称
+     * @param $rename boolean 是否修改字母
+     * @return string
      */
-    protected function getFilename()
+    protected function getFilename($rename = false)
     {
-        return sprintf("%s%s%s%s", $this->getFilePath(), $this->getFormatTableName(), $this->suffix, self::EXT);
+        return sprintf("%s%s%s%s%s", $this->getFilePath(), $this->getFormatTableName(), $this->suffix, ($rename ? date('YmdHis') : '') , self::EXT);
+    }
+
+    public function hasFile()
+    {
+        return file_exists(sprintf("%s%s%s%s", $this->getFilePath(), $this->getFormatTableName(), $this->suffix, self::EXT));
     }
 
     /**
@@ -155,6 +162,11 @@ abstract class Init
      */
     protected function put($code)
     {
+        //  如果存在则修改文件名字
+        if ($this->hasFile()) {
+            rename($this->getFilename(), $this->getFilename(true));
+        }
+
         return file_put_contents($this->getFilename(), sprintf("%s%s", $this->getFileHeader(), str_replace(['\r\n', '\t'], [PHP_EOL, "\t"], $code)));
     }
 

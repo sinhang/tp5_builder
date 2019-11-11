@@ -47,7 +47,9 @@ class Index
             'rules' => json_encode($this->rules, JSON_UNESCAPED_UNICODE)]);
     }
 
-
+    /**
+     * 验证模型
+     */
     public function validate()
     {
         try {
@@ -64,11 +66,39 @@ class Index
         Response::create($this->ret, 'json')->send();
     }
 
+    /**
+     * 数据模型
+     */
     public function model()
     {
         try {
             if (!request()->post()) throw new Exception('非法操作');
             Model::instance(request()->param())->create();
+        } catch (Exception $e) {
+            $this->ret  = [
+                'code'  => $e->getCode(),
+                'msg'   => $e->getMessage(),
+            ];
+        }
+        Response::create($this->ret, 'json')->send();
+    }
+
+    /**
+     * 基础模型
+     */
+    public function basic()
+    {
+        try {
+            if (!request()->post()) throw new Exception('非法操作');
+            $data   = request()->param();
+            foreach ($this->tables as $k => $v) {
+                    $data['table']  = $v['TABLE_NAME'];
+                    $generate = new Model($data);
+                    if (!$generate->hasFile()) {
+                        $generate->create();
+                    }
+            }
+
         } catch (Exception $e) {
             $this->ret  = [
                 'code'  => $e->getCode(),

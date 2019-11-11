@@ -131,7 +131,7 @@ class Model extends Init
                 $code   .= $this->generateCodeRow(
                     sprintf('return $this->%s(%s, \'%s\', \'%s\')%s%s->field(\'%s\');',
                         $v['relation'],
-                        "{$this->data['namespace']}\\{$name}::class",
+                        "{$this->data['namespace']}\\{$name}{$this->suffix}::class",
                         $v['foreignKey'], $v['localKey'],
                         self::CODE_ROW_RIGHT,
                         str_repeat(self::CODE_ROW_LEFT, 3),

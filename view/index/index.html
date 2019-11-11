@@ -42,8 +42,13 @@
                     prop="TABLE_COLLATION"
                     label="集合">
             </el-table-column>
-            <el-table-column
-                    label="操作">
+            <el-table-column width="160" align="center">
+                <template slot="header" slot-scope="scope">
+                    <el-button
+                            size="mini"
+                            type="danger"
+                            @click="showGenerateBasicDataModelDialog">生成基础模型</el-button>
+                </template>
                 <template slot-scope="scope">
                     <p class="text-center">
                         <el-button
@@ -63,9 +68,9 @@
     </div>
 
     <!-- Model -->
-    <el-dialog width="85%" title="生成数据模型" :close-on-click-modal="false" :close-on-press-escape="false" :before-close="clearAllData" :visible.sync="showGenerateDataModel">
+    <el-dialog width="85%" title="生成数据模型" :before-close="closeGenerateDataModel" :close-on-click-modal="false" :close-on-press-escape="false" :visible.sync="showGenerateDataModel">
         <el-form size="small" label-position="top">
-            <el-tabs v-model="dataModelActive" @tab-click="dataModelHandleClick">
+            <el-tabs v-model="dataModelActive">
                 <el-tab-pane label="常规配置" name="basic">
                     <el-form-item label="命名空间">
                         <el-input v-model="namespace" />
@@ -330,15 +335,15 @@
             </el-tabs>
         </el-form>
         <span slot="footer" class="dialog-footer">
-            <el-button @click="showGenerateDataModel = false">取 消</el-button>
+            <el-button @click="closeGenerateDataModel">取 消</el-button>
             <el-button type="primary" :loading="btnLoading" @click="btnGenerateModel">确 定</el-button>
         </span>
     </el-dialog>
 
     <!-- Validate -->
-    <el-dialog :close-on-click-modal="false" :close-on-press-escape="false" width="85%" title="生成验证模型" :visible.sync="showGenerateValidateModel">
+    <el-dialog :close-on-click-modal="false" :before-close="closeGenerateValidateModel" :close-on-press-escape="false" width="85%" title="生成验证模型" :visible.sync="showGenerateValidateModel">
         <el-form size="small">
-            <el-tabs v-model="validateModelActive" @tab-click="dataModelHandleClick">
+            <el-tabs v-model="validateModelActive">
                 <el-tab-pane label="常规配置" name="basic">
                     <el-form-item label="命名空间">
                         <el-input v-model="namespace" />
@@ -409,8 +414,40 @@
             </el-tabs>
         </el-form>
         <span slot="footer" class="dialog-footer">
-            <el-button @click="showGenerateValidateModel = false">取 消</el-button>
+            <el-button @click="closeGenerateValidateModel">取 消</el-button>
             <el-button type="primary" :loading="btnLoading" @click="btnGenerateValidateModel">确 定</el-button>
+        </span>
+    </el-dialog>
+
+
+    <el-dialog width="85%" title="生成基础数据模型" :before-close="closeGenerateBasicDataModel" :close-on-click-modal="false" :close-on-press-escape="false" :visible.sync="showGenerateBasicDataModel">
+        <el-form size="small" label-position="top">
+            <el-tabs v-model="dataBasicModelActive">
+                <el-tab-pane label="常规配置" name="basic">
+                    <el-form-item label="命名空间">
+                        <el-input v-model="namespace" />
+                    </el-form-item>
+                    <el-form-item label="文件路径">
+                        <el-input v-model="filepath" />
+                    </el-form-item>
+                    <el-form-item label="主键">
+                        <el-input v-model="pk" />
+                    </el-form-item>
+                    <el-form-item label="创建时间">
+                        <el-input v-model="create_time" />
+                    </el-form-item>
+                    <el-form-item label="更新时间">
+                        <el-input v-model="update_time" />
+                    </el-form-item>
+                    <el-form-item label="软删除">
+                        <el-input v-model="delete_time" />
+                    </el-form-item>
+                </el-tab-pane>
+            </el-tabs>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="closeGenerateBasicDataModel">取 消</el-button>
+            <el-button type="primary" :loading="btnLoading" @click="btnGenerateBasicModel">确 定</el-button>
         </span>
     </el-dialog>
 
@@ -494,8 +531,10 @@
             tables: tablesObj,
             dataModelActive: 'basic',
             validateModelActive: 'basic',
+            dataBasicModelActive: 'basic',
             showGenerateDataModel: false,
             showGenerateValidateModel: false,
+            showGenerateBasicDataModel: false,
             pk: 'id',
             create_time: 'create_time',
             update_time: 'update_time',
@@ -535,8 +574,17 @@
                 this.data = item
                 this.currentTable = table
             },
-            dataModelHandleClick() {
-
+            closeGenerateDataModel() {
+                this.removeData();
+                this.showGenerateDataModel = false;
+            },
+            closeGenerateValidateModel() {
+                this.removeData();
+                this.showGenerateValidateModel = false;
+            },
+            closeGenerateBasicDataModel() {
+                this.removeData();
+                this.showGenerateBasicDataModel = false;
             },
             sceneAddBtn() {
                 this.validateScene.push({
@@ -629,10 +677,6 @@
                 }).catch(err => {
                     this.btnLoading = false
                 })
-            },
-            clearAllData() {
-                this.showGenerateDataModel = false
-                console.log('clear all data')
             },
             closeChooseValidateRulesDialog() {
                 // this.$forceUpdate()
@@ -741,11 +785,57 @@
                     });
 
                     if (res.data.code!== 0) {
-                        // window.location.reload()
+                        window.location.reload()
                     } else {
                         this.btnLoading = false
                     }
+                }).catch(err => {
                     this.btnLoading = false
+                })
+            },
+            removeData() {
+                //  当取消创建的时候移除所有数据
+                this.relationList = [];
+                this.setFunctionList = [];
+                this.getFunctionList = [];
+                this.appendList = [];
+                this.validateScene = [];
+                this.checkGroup = [];
+                this.validateFields = [];
+                this.selectedValidateFields = []
+                this.currentField = {}
+                this.currentFieldIndex = ''
+                this.currentTable = ''
+                for (let i in this.attrsList) {
+                    this.attrsList[i].value = []
+                    this.attrsList[i].fields = []
+                }
+            },
+            showGenerateBasicDataModelDialog() {
+                this.showGenerateBasicDataModel = true
+                this.namespace = ['app', 'api', 'model'].join('\\')
+                this.filepath = ['api', 'model'].join('/')
+            },
+            btnGenerateBasicModel() {
+                this.btnLoading = true
+                axios.post('/index/basic', {
+                    namespace: this.namespace,
+                    filepath: this.filepath,
+                    delete_time: this.delete_time,
+                    pk: this.pk,
+                    create_time: this.create_time,
+                    update_time: this.update_time
+                }).then(res => {
+                    this.$message({
+                        message: res.data.msg,
+                        type: res.data.code !== 0 ? 'success' : 'error'
+                    });
+
+                    if (res.data.code!== 0) {
+                        window.location.reload()
+                    } else {
+                        this.btnLoading = false
+                    }
                 }).catch(err => {
                     this.btnLoading = false
                 })

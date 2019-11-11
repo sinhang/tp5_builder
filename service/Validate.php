@@ -7,7 +7,7 @@ namespace app\tools\service;
 class Validate extends Init
 {
 
-    protected $suffix = 'Validate', $parentClass = '\\think\\Validate';
+    protected $suffix = '', $parentClass = '\\think\\Validate';
 
     public function create()
     {

@@ -7,7 +7,7 @@ namespace app\tools\service;
 class Model extends Init
 {
     //  后缀，继承上级类名
-    protected $suffix = 'Model', $parentClass = '\\think\\Model';
+    protected $suffix = 'Model', $parentClass = '\\think\\Model', $use = 'use think\model\concern\SoftDelete;', $trait = 'use SoftDelete;';
 
     /**
      * 创建文件

@@ -17,7 +17,7 @@ abstract class Init
     //  换行
     const CODE_ROW_RIGHT = PHP_EOL;
     //  数据，后缀，继承class名称
-    protected $data = [], $suffix = '', $parentClass = '';
+    protected $data = [], $suffix = '', $parentClass = '', $use = '', $trait = '';
     //  单例
     public static $instance;
 
@@ -78,7 +78,7 @@ abstract class Init
      */
     protected function getFileHeader()
     {
-        return sprintf('<?php%s/**%s * Date: %s%s */%snamespace %s;%sclass %s%s extends %s { %s',
+        return sprintf('<?php%s/**%s * Date: %s%s */%snamespace %s;%s%s%sclass %s%s extends %s { %s%s%s',
             str_repeat(self::CODE_ROW_RIGHT, 1),
         self::CODE_ROW_RIGHT,
             date('Y-m-d H:i:s', time()),
@@ -86,9 +86,13 @@ abstract class Init
             str_repeat(self::CODE_ROW_RIGHT, 3),
             $this->data['namespace'],
             str_repeat(self::CODE_ROW_RIGHT, 2),
+            $this->use,
+            str_repeat(self::CODE_ROW_RIGHT, 2),
             $this->getFormatTableName(),
             $this->suffix,
             $this->parentClass,
+            str_repeat(self::CODE_ROW_RIGHT, 2),
+            ($this->trait ? sprintf("\t%s", $this->trait) : ''),
             str_repeat(self::CODE_ROW_RIGHT, 2)
             );
     }

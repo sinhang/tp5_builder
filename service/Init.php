@@ -78,7 +78,7 @@ abstract class Init
      */
     protected function getFileHeader()
     {
-        return sprintf('<?php%s/**%s * Date: %s%s */%snamespace %s;%s%s%sclass %s%s extends %s { %s%s%s',
+        return sprintf('<?php%s/**%s * Date: %s%s */%snamespace %s;%s%s%sclass %s%s %s { %s%s%s',
             str_repeat(self::CODE_ROW_RIGHT, 1),
         self::CODE_ROW_RIGHT,
             date('Y-m-d H:i:s', time()),
@@ -90,7 +90,7 @@ abstract class Init
             str_repeat(self::CODE_ROW_RIGHT, 2),
             $this->getFormatTableName(),
             $this->suffix,
-            $this->parentClass,
+            ($this->parentClass ? " extends {$this->parentClass}" : ""),
             str_repeat(self::CODE_ROW_RIGHT, 2),
             ($this->trait ? sprintf("\t%s", $this->trait) : ''),
             str_repeat(self::CODE_ROW_RIGHT, 2)
@@ -154,14 +154,12 @@ abstract class Init
     protected function arrToStrArr($arr, $last = ',', $start = '[', $end = ']')
     {
 
-        if (empty($str)) {
+        if (empty($arr)) {
             $str    = "{$start}{$end}";
         } else {
             $str    = "{$start}'";
-            if (!empty($arr)) {
-                $str .= implode("', '", $arr);
-            }
-            $str .= "'{$end}{$last}";
+            $str    .= implode("', '", $arr);
+            $str    .= "'{$end}{$last}";
         }
 
         return $str;
